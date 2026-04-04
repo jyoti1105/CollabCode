@@ -1,18 +1,46 @@
+require('dotenv').config();
+const path = require("path");
 const express = require("express");
 const http = require("http");
 const { Server } = require("socket.io");
 const cors = require("cors");
+const authRoutes = require('./routes/auth');
+const profileRoutes = require('./routes/profile');
+const db = require('./utils/db');
 
 const app = express();
-app.use(cors());
+const corsOptions = {
+  origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  credentials: true,
+};
+app.use(cors(corsOptions));
 app.use(express.json());
+app.use('/api/auth', authRoutes);
+app.use('/api/profile', profileRoutes);
+
+if (process.env.NODE_ENV === 'production') {
+  const clientBuildPath = path.join(__dirname, '../client/build');
+  app.use(express.static(clientBuildPath));
+
+  app.get('*', (req, res) => {
+    if (req.path.startsWith('/api/')) {
+      return res.status(404).json({ error: 'API route not found' });
+    }
+    return res.sendFile(path.join(clientBuildPath, 'index.html'));
+  });
+}
 
 const server = http.createServer(app);
 const io = new Server(server, {
-  cors: {
-    origin: "http://localhost:3000",
-    methods: ["GET", "POST"]
-  }
+  cors: corsOptions,
+});
+
+db.connect().finally(() => {
+  const PORT = process.env.PORT || 5000;
+  server.listen(PORT, () => {
+    console.log(`🚀 CollabCode Server is running on port ${PORT}`);
+  });
 });
 
 const rooms = {};
@@ -77,12 +105,16 @@ io.on("connection", (socket) => {
       }
 
       // Check for duplicate username
-      const isDuplicate = rooms[roomId].users.some(u => u.username === cleanUsername);
-      if (isDuplicate) {
+      const existingUser = rooms[roomId].users.find(u => u.username === cleanUsername);
+      if (existingUser && existingUser.id !== socket.id) {
         return callback({ error: "Username already taken in this room" });
       }
 
-      rooms[roomId].users.push({ id: socket.id, username: cleanUsername, joinedAt: new Date() });
+      if (existingUser && existingUser.id === socket.id) {
+        existingUser.joinedAt = new Date();
+      } else {
+        rooms[roomId].users.push({ id: socket.id, username: cleanUsername, joinedAt: new Date() });
+      }
       rooms[roomId].lastActivity = new Date();
 
       // Send current state to the new user
@@ -234,9 +266,4 @@ app.get("/", (req, res) => {
 
 app.get("/health", (req, res) => {
   res.json({ status: "healthy", uptime: process.uptime() });
-});
-
-const PORT = process.env.PORT || 5000;
-server.listen(PORT, () => {
-  console.log(`🚀 CollabCode Server is running on port ${PORT}`);
 });
