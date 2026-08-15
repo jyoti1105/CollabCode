@@ -10,6 +10,9 @@ node_modules/
 /build
 /dist
 
+# Local user data store (fallback DB, contains real user records)
+server/data/
+
 # Misc
 .DS_Store
 .env

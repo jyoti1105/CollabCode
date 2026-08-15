@@ -69,7 +69,7 @@ export default function Home() {
     <div className="home-container">
       <div className="hero-shell">
         <header className="hero-nav">
-          <span className="hero-logo">JumpBot</span>
+          <span className="hero-logo">CollabCode</span>
           <nav className="hero-links">
             <a href="#features">Why</a>
             <a href="#pricing">Pricing</a>
@@ -143,7 +143,7 @@ export default function Home() {
           <div className="hero-right">
             <div className="hero-code-block">
               <pre>{`const hello = () => {
-  console.log('JumpBot onboard');
+  console.log('CollabCode onboard');
 };
 
 hello();`}</pre>
