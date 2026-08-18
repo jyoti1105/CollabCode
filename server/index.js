@@ -8,8 +8,21 @@ const profileRoutes = require('./routes/profile');
 const db = require('./utils/db');
 
 const app = express();
+
+const allowedOrigins = (process.env.CORS_ORIGIN || 'http://localhost:3000')
+  .split(',')
+  .map(o => o.trim().replace(/\/$/, ''))
+  .filter(Boolean);
+
 const corsOptions = {
-  origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
+  origin: (origin, callback) => {
+    // Allow non-browser requests (no Origin header), e.g. curl/health checks.
+    if (!origin || allowedOrigins.includes(origin.replace(/\/$/, ''))) {
+      return callback(null, true);
+    }
+    console.warn(`🚫 Blocked by CORS: ${origin} not in [${allowedOrigins.join(', ')}]`);
+    return callback(new Error('Not allowed by CORS'));
+  },
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   credentials: true,
 };
