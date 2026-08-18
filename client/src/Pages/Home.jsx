@@ -4,7 +4,7 @@ import { v4 as uuidv4 } from "uuid";
 import { useAuth } from "../AuthContext";
 
 export default function Home() {
-  const { user, isAuthenticated, logout } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const [roomId, setRoomId] = useState("");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -23,7 +23,7 @@ export default function Home() {
       setError("Please login before joining a room.");
       return false;
     }
-    if (room && room.trim().length < 6) {
+    if (room !== null && room.trim().length < 6) {
       setError("Room ID must be at least 6 characters");
       return false;
     }
@@ -68,20 +68,11 @@ export default function Home() {
   return (
     <div className="home-container">
       <div className="hero-shell">
-        <header className="hero-nav">
-          <span className="hero-logo">CollabCode</span>
-          <nav className="hero-links">
-            <a href="#features">Why</a>
-            <a href="#pricing">Pricing</a>
-            <a href="#get-started">Get Started</a>
-            {isAuthenticated && (
-              <>
-                <button className="link-button" onClick={() => navigate("/profile")}>Profile</button>
-                <button className="link-button" onClick={logout}>Logout</button>
-              </>
-            )}
-          </nav>
-        </header>
+        <nav className="hero-links">
+          <a href="#features">Why</a>
+          <a href="#pricing">Pricing</a>
+          <a href="#get-started">Get Started</a>
+        </nav>
 
         <section className="hero-section">
           <div className="hero-left">
@@ -118,7 +109,7 @@ export default function Home() {
 
             <div id="get-started" className="quick-form">
               {error && <p className="error">❌ {error}</p>}
-              {success && <p style={{ color: "#10b981", fontWeight: 500, textAlign: "center" }}>{success}</p>}
+              {success && <p className="success-message">{success}</p>}
               {isAuthenticated ? (
                 <>
                   <div className="info-box">
@@ -170,34 +161,36 @@ hello();`}</pre>
           </article>
         </section>
 
-        <section id="pricing" className="pricing-grid">
+        <section id="pricing">
           <h2>Pricing Plans</h2>
-          <div className="pricing-card">
-            <h3>Starter</h3>
-            <p className="price">Free</p>
-            <ul>
-              <li>1 room, 3 participants</li>
-              <li>Basic code sync</li>
-              <li>Chat & terminal support</li>
-            </ul>
-          </div>
-          <div className="pricing-card premium">
-            <h3>Pro</h3>
-            <p className="price">$9.99 / mo</p>
-            <ul>
-              <li>Unlimited rooms</li>
-              <li>10 participants per room</li>
-              <li>Advanced file and user controls</li>
-            </ul>
-          </div>
-          <div className="pricing-card enterprise">
-            <h3>Enterprise</h3>
-            <p className="price">Contact Sales</p>
-            <ul>
-              <li>Unlimited users & priority support</li>
-              <li>Audit logs and team admin</li>
-              <li>Custom themes and branding</li>
-            </ul>
+          <div className="pricing-grid">
+            <div className="pricing-card">
+              <h3>Starter</h3>
+              <p className="price">Free</p>
+              <ul>
+                <li>1 room, 3 participants</li>
+                <li>Basic code sync</li>
+                <li>Chat & terminal support</li>
+              </ul>
+            </div>
+            <div className="pricing-card premium">
+              <h3>Pro</h3>
+              <p className="price">$9.99 / mo</p>
+              <ul>
+                <li>Unlimited rooms</li>
+                <li>10 participants per room</li>
+                <li>Advanced file and user controls</li>
+              </ul>
+            </div>
+            <div className="pricing-card enterprise">
+              <h3>Enterprise</h3>
+              <p className="price">Contact Sales</p>
+              <ul>
+                <li>Unlimited users & priority support</li>
+                <li>Audit logs and team admin</li>
+                <li>Custom themes and branding</li>
+              </ul>
+            </div>
           </div>
         </section>
       </div>

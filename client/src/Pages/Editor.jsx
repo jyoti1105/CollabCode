@@ -3,33 +3,34 @@ import { useParams, useNavigate } from "react-router-dom";
 import Editor from "@monaco-editor/react";
 import socket from "../socket";
 import { useAuth } from "../AuthContext";
+import { useTheme } from "../ThemeContext";
 
 const LANGUAGES = [
   { label: "JavaScript", value: "javascript", icon: "🟨" },
   { label: "TypeScript", value: "typescript", icon: "🔷" },
   { label: "Python", value: "python", icon: "🐍" },
   { label: "Java", value: "java", icon: "☕" },
-  { label: "C++", value: "cpp", icon: "⚡" },
-  { label: "C#", value: "csharp", icon: "🔷" },
+  { label: "C++", value: "cpp", icon: "➕" },
+  { label: "C#", value: "csharp", icon: "🟣" },
   { label: "Go", value: "go", icon: "🐹" },
   { label: "Rust", value: "rust", icon: "🦀" },
   { label: "PHP", value: "php", icon: "🐘" },
   { label: "Ruby", value: "ruby", icon: "💎" },
   { label: "HTML", value: "html", icon: "🌐" },
   { label: "CSS", value: "css", icon: "🎨" },
-  { label: "JSON", value: "json", icon: "📋" },
+  { label: "JSON", value: "json", icon: "🗂️" },
   { label: "SQL", value: "sql", icon: "🗄️" },
   { label: "Markdown", value: "markdown", icon: "📝" },
 ];
 
 const THEMES = [
-  { label: "Dark", value: "vs-dark", preview: "🖤" },
-  { label: "Light", value: "light", preview: "🤍" },
-  { label: "High Contrast", value: "hc-black", preview: "⚫" },
-  { label: "GitHub Dark", value: "github-dark", preview: "🐙" },
-  { label: "Monokai", value: "monokai", preview: "🌈" },
-  { label: "Solarized Dark", value: "solarized-dark", preview: "🌅" },
-  { label: "Dracula", value: "dracula", preview: "🧛" },
+  { label: "Dark", value: "vs-dark" },
+  { label: "Light", value: "light" },
+  { label: "High Contrast", value: "hc-black" },
+  { label: "GitHub Dark", value: "github-dark" },
+  { label: "Monokai", value: "monokai" },
+  { label: "Solarized Dark", value: "solarized-dark" },
+  { label: "Dracula", value: "dracula" },
 ];
 
 const FILES = [
@@ -42,6 +43,7 @@ export default function EditorPage() {
   const { roomId } = useParams();
   const navigate = useNavigate();
   const { user, isAuthenticated } = useAuth();
+  const { theme: appTheme, toggleTheme } = useTheme();
   const username = user?.username;
 
   const [code, setCode] = useState("// Start coding here...");
@@ -410,7 +412,7 @@ export default function EditorPage() {
 
         <select className="select" value={theme} onChange={handleThemeChange}>
           {THEMES.map((t) => (
-            <option key={t.value} value={t.value}>{t.preview} {t.label}</option>
+            <option key={t.value} value={t.value}>{t.label}</option>
           ))}
         </select>
 
@@ -441,118 +443,130 @@ export default function EditorPage() {
           ⚙️
         </button>
 
+        <button
+          className="btn-icon"
+          onClick={toggleTheme}
+          title={appTheme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+        >
+          {appTheme === "dark" ? "🌙" : "☀️"}
+        </button>
+
         <button className="btn-leave" onClick={() => navigate("/")}>
           🚪 Leave
         </button>
       </div>
 
       <div className="main-content">
-        {sidebarOpen && (
-          <>
-            <div className="sidebar" style={{ width: `${sidebarWidth}px` }}>
-              <div className="sidebar-header">
-                <h3>Files</h3>
-                <button className="btn-add-file" onClick={createNewFile} title="Create New File">
-                  ➕
-                </button>
+        <div className="content-row">
+          {sidebarOpen && (
+            <>
+              <div className="sidebar" style={{ width: `${sidebarWidth}px` }}>
+                <div className="sidebar-header">
+                  <h3>Files</h3>
+                  <button className="btn-add-file" onClick={createNewFile} title="Create New File">
+                    ➕
+                  </button>
+                </div>
+                <div className="file-list">
+                  {files.map((file) => (
+                    <div
+                      key={file.name}
+                      className={`file-item ${currentFile === file.name ? 'active' : ''}`}
+                      onClick={() => selectFile(file.name)}
+                    >
+                      <span className="file-icon">
+                        {LANGUAGES.find(l => l.value === file.language)?.icon || '📄'}
+                      </span>
+                      <span className="file-name">{file.name}</span>
+                      {currentFile === file.name && <span className="file-indicator">●</span>}
+                    </div>
+                  ))}
+                </div>
               </div>
-              <div className="file-list">
-                {files.map((file) => (
-                  <div
-                    key={file.name}
-                    className={`file-item ${currentFile === file.name ? 'active' : ''}`}
-                    onClick={() => selectFile(file.name)}
-                  >
-                    <span className="file-icon">
-                      {LANGUAGES.find(l => l.value === file.language)?.icon || '📄'}
-                    </span>
-                    <span className="file-name">{file.name}</span>
-                    {currentFile === file.name && <span className="file-indicator">●</span>}
-                  </div>
-                ))}
+              <div className="resize-handle-v" onMouseDown={handleSidebarResize} title="Drag to resize"></div>
+            </>
+          )}
+
+          <div className="editor-wrapper">
+            <div className="editor-header">
+              <span className="current-file">
+                {LANGUAGES.find(l => l.value === language)?.icon} {currentFile}
+              </span>
+              <div className="editor-stats">
+                <span>{users.length} user{users.length !== 1 ? 's' : ''} online</span>
+                <span>•</span>
+                <span>{code.split('\n').length} lines</span>
+                <span>•</span>
+                <span>{code.length} chars</span>
               </div>
             </div>
-            <div className="resize-handle-v" onMouseDown={handleSidebarResize} title="Drag to resize"></div>
-          </>
-        )}
 
-        <div className="editor-wrapper">
-          <div className="editor-header">
-            <span className="current-file">
-              {LANGUAGES.find(l => l.value === language)?.icon} {currentFile}
-            </span>
-            <div className="editor-stats">
-              <span>{users.length} user{users.length !== 1 ? 's' : ''} online</span>
-              <span>•</span>
-              <span>{code.split('\n').length} lines</span>
-              <span>•</span>
-              <span>{code.length} chars</span>
+            <div className="monaco-container">
+              <Editor
+                height="100%"
+                language={language}
+                value={code}
+                onChange={handleCodeChange}
+                theme={theme}
+                options={{
+                  fontSize: fontSize,
+                  minimap: { enabled: minimapOpen },
+                  wordWrap: wordWrap ? "on" : "off",
+                  scrollBeyondLastLine: false,
+                  automaticLayout: true,
+                  tabSize: 2,
+                  lineNumbers: "on",
+                  renderWhitespace: "selection",
+                  bracketPairColorization: { enabled: true },
+                  guides: { bracketPairs: true },
+                  smoothScrolling: true,
+                  cursorBlinking: "smooth",
+                  contextmenu: true,
+                  mouseWheelZoom: true,
+                  folding: true,
+                  lineDecorationsWidth: 10,
+                  glyphMargin: true,
+                }}
+              />
             </div>
           </div>
 
-          <Editor
-            height="calc(100vh - 100px)"
-            language={language}
-            value={code}
-            onChange={handleCodeChange}
-            theme={theme}
-            options={{
-              fontSize: fontSize,
-              minimap: { enabled: minimapOpen },
-              wordWrap: wordWrap ? "on" : "off",
-              scrollBeyondLastLine: false,
-              automaticLayout: true,
-              tabSize: 2,
-              lineNumbers: "on",
-              renderWhitespace: "selection",
-              bracketPairColorization: { enabled: true },
-              guides: { bracketPairs: true },
-              smoothScrolling: true,
-              cursorBlinking: "smooth",
-              contextmenu: true,
-              mouseWheelZoom: true,
-              folding: true,
-              lineDecorationsWidth: 10,
-              glyphMargin: true,
-            }}
-          />
-        </div>
-
-        {chatOpen && (
-          <>
-            <div className="resize-handle-h" onMouseDown={handleChatResize} title="Drag to resize"></div>
-            <div className="chat-panel slide-in-right" style={{ width: `${chatWidth}px` }}>
-              <div className="chat-header">
-                <h3>💬 Chat ({messages.length})</h3>
-                <button className="btn-close" onClick={() => setChatOpen(false)}>×</button>
-              </div>
-              <div className="chat-messages">
-                {messages.map((msg, idx) => (
-                  <div key={idx} className={`message ${msg.user === username ? 'own' : ''}`}>
-                    <div className="message-header">
-                      <span className="message-user">{msg.user}</span>
-                      <span className="message-time">
-                        {new Date(msg.timestamp).toLocaleDateString()} {new Date(msg.timestamp).toLocaleTimeString()}
-                      </span>
+          {chatOpen && (
+            <>
+              <div className="resize-handle-h" onMouseDown={handleChatResize} title="Drag to resize"></div>
+              <div className="chat-panel slide-in-right" style={{ width: `${chatWidth}px` }}>
+                <div className="chat-header">
+                  <h3>💬 Chat ({messages.length})</h3>
+                  <button className="btn-close" onClick={() => setChatOpen(false)}>×</button>
+                </div>
+                <div className="chat-messages">
+                  {messages.map((msg, idx) => (
+                    <div key={idx} className={`message ${msg.user === username ? 'own' : ''}`}>
+                      <div className="message-header">
+                        <span className="message-user">{msg.user}</span>
+                        <span className="message-time">
+                          {new Date(msg.timestamp).toLocaleDateString()} {new Date(msg.timestamp).toLocaleTimeString()}
+                        </span>
+                      </div>
+                      <div className="message-text">{msg.text}</div>
                     </div>
-                    <div className="message-text">{msg.text}</div>
-                  </div>
-                ))}
+                  ))}
+                </div>
+                <div className="chat-input">
+                  <input
+                    ref={chatInputRef}
+                    type="text"
+                    placeholder="Type a message..."
+                    value={newMessage}
+                    onChange={(e) => setNewMessage(e.target.value)}
+                    onKeyPress={handleKeyPress}
+                  />
+                  <button onClick={sendMessage}>📤</button>
+                </div>
               </div>
-              <div className="chat-input">
-                <input
-                  ref={chatInputRef}
-                  type="text"
-                  placeholder="Type a message..."
-                  value={newMessage}
-                  onChange={(e) => setNewMessage(e.target.value)}
-                  onKeyPress={handleKeyPress}
-                />
-                <button onClick={sendMessage}>📤</button>
-              </div>
-            </div>
-          </>
-        )}
+            </>
+          )}
+        </div>
 
         {terminalOpen && (
           <>

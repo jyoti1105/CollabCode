@@ -1,8 +1,10 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../AuthContext";
+import { useTheme } from "../ThemeContext";
 
 export default function NavBar() {
   const { user, isAuthenticated, logout } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -33,11 +35,18 @@ export default function NavBar() {
         )}
       </nav>
 
-      {isAuthenticated && (
-        <div className="nav-user">
-          <span>{user.username}</span>
-        </div>
-      )}
+      <div className="nav-user">
+        {isAuthenticated && <span>{user.username}</span>}
+        <button
+          type="button"
+          className="theme-toggle"
+          onClick={toggleTheme}
+          title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+          aria-label="Toggle color theme"
+        >
+          {theme === "dark" ? "🌙" : "☀️"}
+        </button>
+      </div>
     </header>
   );
 }
