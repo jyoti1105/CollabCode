@@ -1,10 +1,27 @@
 const express = require('express');
+const rateLimit = require('express-rate-limit');
 const router = express.Router();
 const { signToken, signResetToken, verifyResetToken } = require('../utils/jwt');
 const { sendResetEmail, buildResetUrl } = require('../utils/email');
 const { createUser, findByEmail, comparePassword, updatePassword, findById } = require('../utils/userStore');
 
-router.post('/register', async (req, res) => {
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many attempts. Please try again later.' },
+});
+
+const registerLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many accounts created from this IP. Please try again later.' },
+});
+
+router.post('/register', registerLimiter, async (req, res) => {
   try {
     const { username, email, password } = req.body;
     if (!username || !email || !password) {
@@ -19,7 +36,7 @@ router.post('/register', async (req, res) => {
   }
 });
 
-router.post('/login', async (req, res) => {
+router.post('/login', loginLimiter, async (req, res) => {
   try {
     const { email, password } = req.body;
     if (!email || !password) {
@@ -37,7 +54,7 @@ router.post('/login', async (req, res) => {
   }
 });
 
-router.post('/forgot-password', async (req, res) => {
+router.post('/forgot-password', loginLimiter, async (req, res) => {
   try {
     const { email } = req.body;
     if (!email) {
@@ -52,13 +69,9 @@ router.post('/forgot-password', async (req, res) => {
     const userId = user._id?.toString() || user.id;
     const token = signResetToken({ id: userId, email: user.email });
     const resetUrl = buildResetUrl(token);
-    const emailSent = await sendResetEmail(user.email, resetUrl);
+    await sendResetEmail(user.email, resetUrl);
 
-    const response = { message: 'If that email exists, a reset link has been sent.' };
-    if (!emailSent) {
-      response.debug = resetUrl;
-    }
-    return res.json(response);
+    return res.json({ message: 'If that email exists, a reset link has been sent.' });
   } catch (err) {
     console.error('Forgot password error:', err);
     return res.status(500).json({ error: 'Unable to process password reset request' });

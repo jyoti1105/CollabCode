@@ -3,11 +3,13 @@ const express = require("express");
 const http = require("http");
 const { Server } = require("socket.io");
 const cors = require("cors");
+const helmet = require("helmet");
 const authRoutes = require('./routes/auth');
 const profileRoutes = require('./routes/profile');
 const db = require('./utils/db');
 
 const app = express();
+app.use(helmet());
 
 const allowedOrigins = (process.env.CORS_ORIGIN || 'http://localhost:3000')
   .split(',')
